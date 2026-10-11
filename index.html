@@ -30,6 +30,7 @@ button.p{background:var(--ac);color:#fff;border-color:var(--ac);width:100%;font-
 .e{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);gap:8px}
 .e small{color:var(--mu);display:block}
 .e button{padding:4px 9px;color:var(--mu)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.chip{display:flex;align-items:center;gap:2px;background:var(--bg);border:1px solid var(--bd);border-radius:20px;padding:3px 4px 3px 12px;font-size:14px}.chip button{border:0;background:none;padding:2px 8px;color:var(--mu)}
 .mu{color:var(--mu);font-size:14px}
 </style>
 </head>
@@ -57,6 +58,7 @@ button.p{background:var(--ac);color:#fff;border-color:var(--ac);width:100%;font-
 
 <div class="card">
   <h2>Catégories</h2>
+  <div class="chips" id="cats"></div>
   <div class="row"><input id="newcat" placeholder="Nouvelle catégorie"><button id="addcat">+</button></div>
   <div class="row"><button id="exp">Exporter CSV</button><button id="imp">Importer CSV</button><input id="file" type="file" accept=".csv,text/csv" hidden></div>
   <p class="mu">Données enregistrées uniquement sur cet appareil, dans ce navigateur. Exporte un CSV de temps en temps pour garder une sauvegarde.</p>
@@ -76,6 +78,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 
 function render(){
   $('cat').innerHTML=S.cats.map(c=>'<option>'+esc(c)+'</option>').join('');
+  $('cats').innerHTML=S.cats.map(c=>'<span class="chip">'+esc(c)+'<button data-c="'+esc(c)+'" aria-label="Supprimer la catégorie">✕</button></span>').join('');
   $('mon').textContent=cur.toLocaleDateString('fr-CH',{month:'long',year:'numeric'});
   const p=iso(cur).slice(0,7);
   const its=S.items.filter(i=>i.d.startsWith(p)).sort((a,b)=>b.d.localeCompare(a.d));
@@ -97,6 +100,13 @@ $('add').onclick=()=>{
 $('list').onclick=e=>{const id=e.target.dataset.id;if(id&&confirm('Supprimer cette dépense ?')){S.items=S.items.filter(i=>i.id!==id);save();render()}};
 $('prev').onclick=()=>{cur.setMonth(cur.getMonth()-1);render()};
 $('next').onclick=()=>{cur.setMonth(cur.getMonth()+1);render()};
+$('cats').onclick=e=>{
+  const c=e.target.dataset.c;if(c===undefined)return;
+  if(S.cats.length<2)return alert('Garde au moins une catégorie.');
+  const n=S.items.filter(i=>i.c===c).length;
+  if(!confirm('Supprimer la catégorie « '+c+' » ?'+(n?'\n\nLes '+n+' dépense(s) déjà saisies restent comptées dans leurs mois.':'')))return;
+  S.cats=S.cats.filter(x=>x!==c);save();render();
+};
 $('addcat').onclick=()=>{const v=$('newcat').value.trim();if(v&&!S.cats.includes(v)){S.cats.push(v);save();$('newcat').value='';render()}};
 const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
 $('exp').onclick=()=>{
